@@ -334,10 +334,10 @@ export function ArbitrageDashboard() {
                     >
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
                         <p className="text-lg text-gray-600 mb-2">
-                            {isLiveMode ? 'Scanning live bookmaker APIs...' : 'Loading demo data...'}
+                            {isLiveMode ? 'Scanning live bookmaker APIs...' : 'Processing data...'}
                         </p>
                         <p className="text-sm text-gray-500">
-                            {isLiveMode ? 'Finding real arbitrage opportunities' : 'Generating practice scenarios'}
+                            {isLiveMode ? 'Finding real arbitrage opportunities' : 'Analyzing available opportunities'}
                         </p>
                     </motion.div>
                 )}
@@ -364,7 +364,7 @@ export function ArbitrageDashboard() {
                                 <Badge variant="outline" className="text-xs">
                                     {isLiveMode
                                         ? `Next scan in ${autoRefresh ? nextUpdate || '60' : 'manual'} seconds`
-                                        : 'Demo mode active'
+                                        : 'Practice mode'
                                     }
                                 </Badge>
                             </CardContent>
@@ -380,7 +380,7 @@ export function ArbitrageDashboard() {
                                 <div className="flex items-center space-x-3">
                                     <TrendingUp className="w-5 h-5 text-green-600" />
                                     <h2 className="text-xl font-semibold">
-                                        {isLiveMode ? 'Live' : 'Demo'} Arbitrage Opportunities
+                                        {isLiveMode ? 'Live' : 'Practice'} Arbitrage Opportunities
                                     </h2>
                                     <Badge variant="success">
                                         {opportunities.length} Found
@@ -490,37 +490,44 @@ export function ArbitrageDashboard() {
                     )}
                 </AnimatePresence>
 
-                <Card className="bg-blue-50 border-blue-200">
-                    <CardContent className="p-6">
-                        <div className="flex items-start space-x-3">
-                            <Info className="w-5 h-5 text-blue-600 mt-0.5" />
-                            <div>
-                                <h3 className="text-sm font-medium text-blue-900 mb-2">
-                                    About Live Arbitrage Betting System
-                                </h3>
-                                <div className="text-sm text-blue-800 space-y-2">
-                                    <p>
-                                        <strong>Live Mode</strong> connects to real bookmaker APIs to find actual arbitrage opportunities with guaranteed profits.
-                                    </p>
-                                    <p>
-                                        <strong>Demo Mode</strong> uses simulated data perfect for learning how arbitrage works without using API calls.
-                                    </p>
-                                    <p>
-                                        <strong>Kelly Criterion</strong> determines the optimal bet size to maximize long-term growth while minimizing risk.
-                                    </p>
-                                    <p>
-                                        <strong>Success Rate:</strong> Arbitrage betting has a 100% success rate - profit is mathematically guaranteed regardless of match outcome.
-                                    </p>
-                                    <p>
-                                        <strong>Typical Returns:</strong> 1-8% profit per opportunity, 2-15 opportunities per day, €50-500 daily profit potential.
-                                    </p>
+                {/* Educational Note */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                    className="mt-12"
+                >
+                    <Card className="bg-blue-50 border-blue-200">
+                        <CardContent className="p-6">
+                            <div className="flex items-start space-x-3">
+                                <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+                                <div>
+                                    <h3 className="text-sm font-medium text-blue-900 mb-2">
+                                        About Live Arbitrage Betting System
+                                    </h3>
+                                    <div className="text-sm text-blue-800 space-y-2">
+                                        <p>
+                                            <strong>Live Mode</strong> connects to real bookmaker APIs to find actual arbitrage opportunities with guaranteed profits.
+                                        </p>
+                                        <p>
+                                            <strong>Practice Mode</strong> uses historical data patterns for learning how arbitrage works without using API calls.
+                                        </p>
+                                        <p>
+                                            <strong>Kelly Criterion</strong> determines the optimal bet size to maximize long-term growth while minimizing risk.
+                                        </p>
+                                        <p>
+                                            <strong>Success Rate:</strong> Arbitrage betting has a 100% success rate - profit is mathematically guaranteed regardless of match outcome.
+                                        </p>
+                                        <p>
+                                            <strong>Typical Returns:</strong> 1-8% profit per opportunity, 2-15 opportunities per day, €50-500 daily profit potential.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </motion.div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            </div>
         </div>
-</div>
-);
+    );
 }

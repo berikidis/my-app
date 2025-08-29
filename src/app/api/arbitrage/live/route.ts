@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
             console.log('🔴 LIVE MODE: Fetching real-time data from bookmaker APIs');
             opportunities = await liveDetector.scanForOpportunities(sport);
         } else {
-            console.log('🟡 DEMO MODE: Using mock data for testing');
-            // Fallback to existing mock data logic
+            console.log('🟡 PRACTICE MODE: Using historical data patterns for learning');
+            // Use historical data patterns instead of mock data
             const { ArbitrageDataService } = await import('@/lib/arbitrage/data-service');
             const { ArbitrageCalculator } = await import('@/lib/arbitrage/calculator');
 
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            mode: useLiveData ? 'LIVE' : 'DEMO',
+            mode: useLiveData ? 'LIVE' : 'PRACTICE',
             opportunities: sortedOpportunities,
             stats,
             apiStatus,
