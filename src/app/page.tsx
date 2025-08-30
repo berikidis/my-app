@@ -13,7 +13,7 @@ export default function HomePage() {
 }
 
 export const metadata = {
-    title: 'Live Arbitrage Finder - Guaranteed Profit Betting System',
-    description: 'Professional arbitrage betting system with real-time bookmaker APIs, Kelly Criterion optimization, and guaranteed profits. Find risk-free betting opportunities with our advanced algorithm.',
-    keywords: 'arbitrage betting, guaranteed profit, sports betting, Kelly Criterion, bookmaker odds, risk-free betting',
+    title: 'Live Arbitrage Finder - Real-Time Guaranteed Profit Betting',
+    description: 'Professional live arbitrage betting system with real-time bookmaker APIs, Kelly Criterion optimization, and guaranteed profits. Find risk-free betting opportunities with live market data.',
+    keywords: 'live arbitrage betting, real-time odds, guaranteed profit, sports betting, Kelly Criterion, bookmaker APIs, risk-free betting, live market data',
 };

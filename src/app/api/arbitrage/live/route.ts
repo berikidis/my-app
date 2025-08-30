@@ -1,5 +1,5 @@
 // ===========================================
-// LIVE ARBITRAGE API ENDPOINT
+// LIVE ARBITRAGE API ENDPOINT (LIVE MODE ONLY)
 // ===========================================
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -12,39 +12,9 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const sport = searchParams.get('sport') || 'soccer_epl';
-        const useLiveData = searchParams.get('live') === 'true';
 
-        let opportunities: ArbitrageOpportunity[];
-
-        if (useLiveData) {
-            console.log('🔴 LIVE MODE: Fetching real-time data from bookmaker APIs');
-            opportunities = await liveDetector.scanForOpportunities(sport);
-        } else {
-            console.log('🟡 PRACTICE MODE: Using historical data patterns for learning');
-            // Use historical data patterns instead of mock data
-            const { ArbitrageDataService } = await import('@/lib/arbitrage/data-service');
-            const { ArbitrageCalculator } = await import('@/lib/arbitrage/calculator');
-
-            const mockOddsMap = ArbitrageDataService.generateMockData();
-            opportunities = [];
-
-            for (const [matchKey, bookmakerOdds] of mockOddsMap.entries()) {
-                const [homeTeam, awayTeam] = matchKey.split('_vs_').map(team => team.replace(/_/g, ' '));
-
-                const arbitrage = ArbitrageCalculator.calculateArbitrage(
-                    matchKey,
-                    homeTeam,
-                    awayTeam,
-                    'Premier League',
-                    new Date(Date.now() + 2 * 60 * 60 * 1000),
-                    bookmakerOdds
-                );
-
-                if (arbitrage && arbitrage.profitPercentage > 0) {
-                    opportunities.push(arbitrage);
-                }
-            }
-        }
+        console.log('🔴 LIVE MODE: Fetching real-time data from bookmaker APIs');
+        const opportunities: ArbitrageOpportunity[] = await liveDetector.scanForOpportunities(sport);
 
         // Sort by profit percentage
         const sortedOpportunities = opportunities
@@ -70,7 +40,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            mode: useLiveData ? 'LIVE' : 'PRACTICE',
+            mode: 'LIVE',
             opportunities: sortedOpportunities,
             stats,
             apiStatus,

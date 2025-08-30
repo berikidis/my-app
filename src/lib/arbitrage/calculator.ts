@@ -1,4 +1,3 @@
-
 import { ArbitrageOpportunity, ArbitrageStake, BookmakerOdds } from '@/types/arbitrage';
 
 export class ArbitrageCalculator {
@@ -11,22 +10,56 @@ export class ArbitrageCalculator {
         bookmakerOdds: BookmakerOdds[]
     ): ArbitrageOpportunity | null {
 
-        if (bookmakerOdds.length < 2) return null;
+        if (bookmakerOdds.length < 2) {
+            console.log(`❌ Not enough bookmakers for ${homeTeam} vs ${awayTeam}: ${bookmakerOdds.length}`);
+            return null;
+        }
 
         // Find best odds for each outcome
         const bestHome = this.findBestOdds(bookmakerOdds, 'home');
         const bestAway = this.findBestOdds(bookmakerOdds, 'away');
         const bestDraw = this.findBestOdds(bookmakerOdds, 'draw');
 
+        // Validate odds exist and are valid numbers
+        if (!bestHome?.home || !bestAway?.away || bestHome.home <= 1 || bestAway.away <= 1) {
+            console.log(`❌ Invalid odds for ${homeTeam} vs ${awayTeam}:`, {
+                home: bestHome?.home,
+                away: bestAway?.away,
+                draw: bestDraw?.draw
+            });
+            return null;
+        }
+
         // Calculate implied probabilities
-        const homeImplied = 1 / bestHome.odds;
-        const awayImplied = 1 / bestAway.odds;
-        const drawImplied = bestDraw ? 1 / bestDraw.odds : 0;
+        const homeImplied = 1 / bestHome.home;
+        const awayImplied = 1 / bestAway.away;
+        const drawImplied = bestDraw?.draw && bestDraw.draw > 1 ? 1 / bestDraw.draw : 0;
+
+        // Validate implied probabilities
+        if (!homeImplied || !awayImplied || homeImplied >= 1 || awayImplied >= 1) {
+            console.log(`❌ Invalid implied probabilities for ${homeTeam} vs ${awayTeam}:`, {
+                homeImplied,
+                awayImplied,
+                drawImplied
+            });
+            return null;
+        }
 
         const totalImpliedProbability = homeImplied + awayImplied + drawImplied;
 
+        console.log(`📊 ${homeTeam} vs ${awayTeam} odds analysis:`, {
+            homeOdds: bestHome.home,
+            awayOdds: bestAway.away,
+            drawOdds: bestDraw?.draw,
+            totalImplied: (totalImpliedProbability * 100).toFixed(2) + '%',
+            arbitrageMargin: ((1 - totalImpliedProbability) * 100).toFixed(2) + '%'
+        });
+
         // No arbitrage opportunity if total implied probability >= 1
-        if (totalImpliedProbability >= 1) return null;
+        if (totalImpliedProbability >= 1) {
+            console.log(`❌ No arbitrage for ${homeTeam} vs ${awayTeam}: Total implied = ${(totalImpliedProbability * 100).toFixed(2)}%`);
+            return null;
+        }
 
         // Calculate stakes for €1000 investment
         const totalInvestment = 1000;
@@ -34,46 +67,71 @@ export class ArbitrageCalculator {
 
         // Home stake
         const homeStake = (totalInvestment * homeImplied) / totalImpliedProbability;
-        stakes.push({
-            outcome: '1',
-            outcomeName: `${homeTeam} Win`,
-            bookmaker: bestHome.bookmaker,
-            odds: bestHome.odds,
-            stake: homeStake,
-            profit: (homeStake * bestHome.odds) - totalInvestment,
-            impliedProbability: homeImplied * 100
-        });
+        if (homeStake > 0 && isFinite(homeStake)) {
+            stakes.push({
+                outcome: '1',
+                outcomeName: `${homeTeam} Win`,
+                bookmaker: bestHome.bookmaker,
+                odds: bestHome.home,
+                stake: homeStake,
+                profit: (homeStake * bestHome.home) - totalInvestment,
+                impliedProbability: homeImplied * 100
+            });
+        }
 
         // Away stake
         const awayStake = (totalInvestment * awayImplied) / totalImpliedProbability;
-        stakes.push({
-            outcome: '2',
-            outcomeName: `${awayTeam} Win`,
-            bookmaker: bestAway.bookmaker,
-            odds: bestAway.odds,
-            stake: awayStake,
-            profit: (awayStake * bestAway.odds) - totalInvestment,
-            impliedProbability: awayImplied * 100
-        });
+        if (awayStake > 0 && isFinite(awayStake)) {
+            stakes.push({
+                outcome: '2',
+                outcomeName: `${awayTeam} Win`,
+                bookmaker: bestAway.bookmaker,
+                odds: bestAway.away,
+                stake: awayStake,
+                profit: (awayStake * bestAway.away) - totalInvestment,
+                impliedProbability: awayImplied * 100
+            });
+        }
 
         // Draw stake (if available)
-        if (bestDraw) {
+        if (bestDraw?.draw && bestDraw.draw > 1 && drawImplied > 0) {
             const drawStake = (totalInvestment * drawImplied) / totalImpliedProbability;
-            stakes.push({
-                outcome: 'X',
-                outcomeName: 'Draw',
-                bookmaker: bestDraw.bookmaker,
-                odds: bestDraw.odds,
-                stake: drawStake,
-                profit: (drawStake * bestDraw.odds) - totalInvestment,
-                impliedProbability: drawImplied * 100
-            });
+            if (drawStake > 0 && isFinite(drawStake)) {
+                stakes.push({
+                    outcome: 'X',
+                    outcomeName: 'Draw',
+                    bookmaker: bestDraw.bookmaker,
+                    odds: bestDraw.draw,
+                    stake: drawStake,
+                    profit: (drawStake * bestDraw.draw) - totalInvestment,
+                    impliedProbability: drawImplied * 100
+                });
+            }
+        }
+
+        // Validate stakes
+        if (stakes.length < 2) {
+            console.log(`❌ Insufficient valid stakes for ${homeTeam} vs ${awayTeam}`);
+            return null;
         }
 
         const actualInvestment = stakes.reduce((sum, stake) => sum + stake.stake, 0);
         const guaranteedReturn = stakes[0].stake * stakes[0].odds; // Same for all outcomes
         const totalProfit = guaranteedReturn - actualInvestment;
         const profitPercentage = (totalProfit / actualInvestment) * 100;
+
+        // Validate final calculations
+        if (!isFinite(profitPercentage) || profitPercentage <= 0) {
+            console.log(`❌ Invalid profit calculation for ${homeTeam} vs ${awayTeam}:`, {
+                actualInvestment,
+                guaranteedReturn,
+                totalProfit,
+                profitPercentage
+            });
+            return null;
+        }
+
+        console.log(`✅ Valid arbitrage for ${homeTeam} vs ${awayTeam}: ${profitPercentage.toFixed(2)}% profit`);
 
         // Calculate confidence based on various factors
         const confidence = this.calculateConfidence(
@@ -103,9 +161,9 @@ export class ArbitrageCalculator {
             impliedProbability: totalImpliedProbability,
             stakes,
             bestOdds: {
-                home: { bookmaker: bestHome.bookmaker, odds: bestHome.odds },
-                draw: bestDraw ? { bookmaker: bestDraw.bookmaker, odds: bestDraw.odds } : undefined,
-                away: { bookmaker: bestAway.bookmaker, odds: bestAway.odds }
+                home: { bookmaker: bestHome.bookmaker, odds: bestHome.home },
+                draw: bestDraw?.draw ? { bookmaker: bestDraw.bookmaker, odds: bestDraw.draw } : undefined,
+                away: { bookmaker: bestAway.bookmaker, odds: bestAway.away }
             },
             timeRemaining,
             confidence,
@@ -121,16 +179,19 @@ export class ArbitrageCalculator {
     private static findBestOdds(
         bookmakerOdds: BookmakerOdds[],
         outcome: 'home' | 'away' | 'draw'
-    ) {
-        return bookmakerOdds.reduce((best, current) => {
+    ): BookmakerOdds | null {
+        let best: BookmakerOdds | null = null;
+
+        for (const current of bookmakerOdds) {
             const currentOdds = current[outcome];
-            const bestOdds = best[outcome];
+            if (!currentOdds || currentOdds <= 1 || !isFinite(currentOdds)) continue;
 
-            if (!currentOdds) return best;
-            if (!bestOdds) return current;
+            if (!best || !best[outcome] || currentOdds > best[outcome]!) {
+                best = current;
+            }
+        }
 
-            return currentOdds > bestOdds ? current : best;
-        });
+        return best;
     }
 
     private static calculateConfidence(

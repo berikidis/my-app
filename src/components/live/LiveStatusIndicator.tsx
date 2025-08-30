@@ -1,5 +1,5 @@
 // ===========================================
-// LIVE STATUS INDICATOR - CONNECTION STATUS
+// LIVE STATUS INDICATOR - CONNECTION STATUS (LIVE MODE ONLY)
 // ===========================================
 
 'use client';
@@ -10,9 +10,7 @@ import {
     Activity,
     Clock,
     Zap,
-    AlertCircle,
     Wifi,
-    WifiOff,
     Target,
     Timer
 } from 'lucide-react';
@@ -27,7 +25,7 @@ interface LiveStatusIndicatorProps {
 }
 
 export function LiveStatusIndicator({
-                                        isLive,
+                                        isLive = true, // Always live mode
                                         lastUpdate,
                                         nextUpdate,
                                         opportunitiesFound
@@ -48,42 +46,32 @@ export function LiveStatusIndicator({
             className="flex flex-wrap items-center gap-4 text-sm"
         >
             {/* Connection Status */}
-            <div className="flex items-center space-x-2">
-                {isLive ? (
-                    <motion.div
-                        className="flex items-center space-x-1 text-green-400"
-                        initial={{ scale: 0.9 }}
-                        animate={{ scale: 1 }}
-                        transition={{ duration: 0.2 }}
-                    >
-                        <div className="relative">
-                            <Wifi className="w-4 h-4" />
-                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                        </div>
-                        <Activity className="w-4 h-4" />
-                        <span className="font-medium">Live Monitoring</span>
-                    </motion.div>
-                ) : (
-                    <div className="flex items-center space-x-1 text-gray-400">
-                        <WifiOff className="w-4 h-4" />
-                        <Clock className="w-4 h-4" />
-                        <span>Practice Mode</span>
-                    </div>
-                )}
-            </div>
+            <motion.div
+                className="flex items-center space-x-1 text-green-400"
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.2 }}
+            >
+                <div className="relative">
+                    <Wifi className="w-4 h-4" />
+                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                </div>
+                <Activity className="w-4 h-4" />
+                <span className="font-medium">Live Monitoring</span>
+            </motion.div>
 
             {/* Last Update */}
             {lastUpdate && (
                 <div className="flex items-center space-x-1 text-green-200">
                     <Clock className="w-3 h-3" />
                     <span className="text-xs">
-            Last scan: {formatTimeAgo(lastUpdate)}
-          </span>
+                        Last scan: {formatTimeAgo(lastUpdate)}
+                    </span>
                 </div>
             )}
 
             {/* Next Update Countdown */}
-            {isLive && nextUpdate > 0 && (
+            {nextUpdate > 0 && (
                 <motion.div
                     className="flex items-center space-x-1 text-blue-200"
                     key={nextUpdate} // Re-animate when countdown resets
@@ -93,8 +81,8 @@ export function LiveStatusIndicator({
                 >
                     <Timer className="w-3 h-3" />
                     <span className="text-xs font-mono">
-            Next scan: {getNextUpdateText(nextUpdate)}
-          </span>
+                        Next scan: {getNextUpdateText(nextUpdate)}
+                    </span>
                 </motion.div>
             )}
 
@@ -105,7 +93,7 @@ export function LiveStatusIndicator({
                 transition={{ delay: 0.2 }}
             >
                 <Badge
-                    variant={opportunitiesFound > 0 ? 'success' : 'outline'}
+                    variant={opportunitiesFound > 0 ? 'default' : 'outline'}
                     className={`${
                         opportunitiesFound > 0
                             ? 'bg-green-500 text-white border-green-400'
@@ -117,43 +105,30 @@ export function LiveStatusIndicator({
                 </Badge>
             </motion.div>
 
-            {/* Live Mode Indicators */}
-            {isLive && (
-                <>
-                    {/* High Opportunity Alert */}
-                    {opportunitiesFound >= 5 && (
-                        <motion.div
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="flex items-center space-x-1 bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs"
-                        >
-                            <Zap className="w-3 h-3" />
-                            <span className="font-medium">High Activity</span>
-                        </motion.div>
-                    )}
-
-                    {/* Market Status */}
-                    <div className="flex items-center space-x-1 text-xs text-green-300">
-                        <div className={`w-2 h-2 rounded-full ${
-                            opportunitiesFound > 0 ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'
-                        }`} />
-                        <span>
-              {opportunitiesFound > 0 ? 'Active Market' : 'Scanning...'}
-            </span>
-                    </div>
-                </>
+            {/* High Opportunity Alert */}
+            {opportunitiesFound >= 5 && (
+                <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="flex items-center space-x-1 bg-green-500/20 text-green-400 px-2 py-1 rounded-full text-xs"
+                >
+                    <Zap className="w-3 h-3" />
+                    <span className="font-medium">High Activity</span>
+                </motion.div>
             )}
 
-            {/* Demo Mode Info */}
-            {!isLive && (
-                <div className="flex items-center space-x-1 text-xs text-blue-300 bg-blue-500/20 px-2 py-1 rounded-full">
-                    <AlertCircle className="w-3 h-3" />
-                    <span>Practice mode - Learning only</span>
-                </div>
-            )}
+            {/* Market Status */}
+            <div className="flex items-center space-x-1 text-xs text-green-300">
+                <div className={`w-2 h-2 rounded-full ${
+                    opportunitiesFound > 0 ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'
+                }`} />
+                <span>
+                    {opportunitiesFound > 0 ? 'Active Market' : 'Scanning...'}
+                </span>
+            </div>
 
             {/* Auto-refresh Status */}
-            {isLive && nextUpdate <= 0 && (
+            {nextUpdate <= 0 && (
                 <motion.div
                     animate={{
                         opacity: [1, 0.5, 1],

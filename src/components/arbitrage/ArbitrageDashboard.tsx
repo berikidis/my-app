@@ -1,5 +1,5 @@
 // ===========================================
-// ARBITRAGE DASHBOARD - MAIN COMPONENT
+// ARBITRAGE DASHBOARD - MAIN COMPONENT (LIVE MODE ONLY)
 // ===========================================
 
 'use client';
@@ -25,7 +25,6 @@ import { ArbitrageCard } from './ArbitrageCard';
 import { StatsCards } from './StatsCards';
 import { KellyCalculator } from '../kelly/KellyCalculator';
 import { BankrollManager } from '../kelly/BankrollManager';
-import { LiveModeToggle } from '../live/LiveModeToggle';
 import { LiveStatusIndicator } from '../live/LiveStatusIndicator';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -47,7 +46,6 @@ export function ArbitrageDashboard() {
     const [selectedOpportunity, setSelectedOpportunity] = useState<ArbitrageOpportunity | null>(null);
     const [bankroll, setBankroll] = useState(5000);
     const [showBankrollManager, setShowBankrollManager] = useState(false);
-    const [isLiveMode, setIsLiveMode] = useState(false);
     const [apiStatus, setApiStatus] = useState<any>({});
     const [rateLimits, setRateLimits] = useState<any>({});
     const [nextUpdate, setNextUpdate] = useState(0);
@@ -58,11 +56,11 @@ export function ArbitrageDashboard() {
         setError(null);
 
         try {
-            // Use live API endpoint
+            // Always use live API endpoint
             const endpoint = '/api/arbitrage/live';
             const params = new URLSearchParams({
                 date: selectedDate,
-                live: isLiveMode.toString(),
+                live: 'true', // Always live mode
                 sport: 'soccer_epl'
             });
 
@@ -77,7 +75,7 @@ export function ArbitrageDashboard() {
                 setLastUpdate(new Date());
 
                 // Show success message for live mode
-                if (isLiveMode && data.opportunities.length > 0) {
+                if (data.opportunities.length > 0) {
                     console.log(`🔥 Found ${data.opportunities.length} LIVE arbitrage opportunities!`);
                 }
             } else {
@@ -93,7 +91,7 @@ export function ArbitrageDashboard() {
 
     // Auto-refresh countdown
     useEffect(() => {
-        if (!autoRefresh || !isLiveMode) return;
+        if (!autoRefresh) return;
 
         const countdown = setInterval(() => {
             setNextUpdate(prev => {
@@ -106,27 +104,20 @@ export function ArbitrageDashboard() {
         }, 1000);
 
         return () => clearInterval(countdown);
-    }, [autoRefresh, isLiveMode]);
+    }, [autoRefresh]);
 
     // Initialize countdown
     useEffect(() => {
-        if (isLiveMode && autoRefresh) {
+        if (autoRefresh) {
             setNextUpdate(60);
         } else {
             setNextUpdate(0);
         }
-    }, [isLiveMode, autoRefresh]);
+    }, [autoRefresh]);
 
     useEffect(() => {
         fetchOpportunities();
-    }, [selectedDate, isLiveMode]);
-
-    useEffect(() => {
-        if (!autoRefresh || isLiveMode) return; // Live mode has its own timer
-
-        const interval = setInterval(fetchOpportunities, 60000); // Refresh every minute in demo mode
-        return () => clearInterval(interval);
-    }, [autoRefresh, isLiveMode]);
+    }, [selectedDate]);
 
     const handleCalculateStake = (opportunity: ArbitrageOpportunity) => {
         setSelectedOpportunity(opportunity);
@@ -159,7 +150,7 @@ export function ArbitrageDashboard() {
                                         </p>
                                         {lastUpdate && (
                                             <LiveStatusIndicator
-                                                isLive={isLiveMode}
+                                                isLive={true}
                                                 lastUpdate={lastUpdate}
                                                 nextUpdate={nextUpdate}
                                                 opportunitiesFound={opportunities.length}
@@ -191,12 +182,16 @@ export function ArbitrageDashboard() {
                                         />
                                     </div>
 
-                                    <LiveModeToggle
-                                        isLiveMode={isLiveMode}
-                                        onToggle={setIsLiveMode}
-                                        apiStatus={apiStatus}
-                                        rateLimits={rateLimits}
-                                    />
+                                    {/* Live Mode Indicator */}
+                                    <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+                                        <div className="flex items-center space-x-2">
+                                            <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                                            <span className="text-sm font-semibold">LIVE MODE</span>
+                                        </div>
+                                        <div className="text-xs text-green-200 mt-1">
+                                            Real-time bookmaker data
+                                        </div>
+                                    </div>
 
                                     <div className="flex items-center space-x-2 bg-white/10 rounded-lg p-2 backdrop-blur-sm">
                                         <Switch
@@ -205,8 +200,8 @@ export function ArbitrageDashboard() {
                                             disabled={loading}
                                         />
                                         <span className="text-sm">
-                      {autoRefresh ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-                    </span>
+                                            {autoRefresh ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                                        </span>
                                     </div>
 
                                     <Button
@@ -238,9 +233,9 @@ export function ArbitrageDashboard() {
                 {/* Stats Cards */}
                 <StatsCards stats={stats} loading={loading} />
 
-                {/* Live Mode Alert */}
+                {/* Live Opportunities Alert */}
                 <AnimatePresence>
-                    {isLiveMode && opportunities.length > 0 && (
+                    {opportunities.length > 0 && (
                         <motion.div
                             initial={{ opacity: 0, y: -50 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -268,7 +263,7 @@ export function ArbitrageDashboard() {
 
                 {/* API Rate Limit Warning */}
                 <AnimatePresence>
-                    {isLiveMode && rateLimits && Object.values(rateLimits).some((limit: any) => limit.percentage < 30) && (
+                    {rateLimits && Object.values(rateLimits).some((limit: any) => limit.percentage < 30) && (
                         <motion.div
                             initial={{ opacity: 0, y: -20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -289,8 +284,8 @@ export function ArbitrageDashboard() {
                                             <div className="mt-2 flex space-x-4 text-xs">
                                                 {Object.entries(rateLimits).map(([api, limits]: [string, any]) => (
                                                     <span key={api} className="text-yellow-600">
-                            {api}: {limits.remaining} calls remaining
-                          </span>
+                                                        {api}: {limits.remaining} calls remaining
+                                                    </span>
                                                 ))}
                                             </div>
                                         </div>
@@ -334,16 +329,52 @@ export function ArbitrageDashboard() {
                     >
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mb-4"></div>
                         <p className="text-lg text-gray-600 mb-2">
-                            {isLiveMode ? 'Scanning live bookmaker APIs...' : 'Processing data...'}
+                            Scanning live bookmaker APIs...
                         </p>
                         <p className="text-sm text-gray-500">
-                            {isLiveMode ? 'Finding real arbitrage opportunities' : 'Analyzing available opportunities'}
+                            Finding real arbitrage opportunities
                         </p>
                     </motion.div>
                 )}
 
-                {/* No Opportunities */}
-                {!loading && opportunities.length === 0 && !error && (
+                {/* API Setup Required Message */}
+                <AnimatePresence>
+                    {!loading && opportunities.length === 0 && !error && apiStatus && !apiStatus.hasLiveAccess && (
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.3 }}
+                            className="mb-8"
+                        >
+                            <Card className="text-center py-12 bg-gradient-to-br from-orange-50 to-yellow-50 border-orange-200">
+                                <CardContent>
+                                    <AlertCircle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
+                                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                                        API Key Required for Live Data
+                                    </h3>
+                                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                                        To access real-time arbitrage opportunities from bookmaker APIs, you need to configure your API credentials.
+                                    </p>
+                                    <div className="bg-orange-100 border border-orange-200 rounded-lg p-4 mb-6 max-w-lg mx-auto text-left">
+                                        <h4 className="font-semibold text-orange-800 mb-2">Setup Instructions:</h4>
+                                        <ol className="text-sm text-orange-700 space-y-1">
+                                            <li>1. Get API key from <a href="https://the-odds-api.com" target="_blank" className="underline font-medium">The Odds API</a></li>
+                                            <li>2. Add <code className="bg-orange-200 px-1 rounded">NEXT_PUBLIC_ODDS_API_KEY=your_key</code> to .env.local</li>
+                                            <li>3. Restart the application</li>
+                                            <li>4. Start finding real arbitrage opportunities!</li>
+                                        </ol>
+                                    </div>
+                                    <Badge variant="outline" className="text-orange-600 border-orange-600">
+                                        Live data required for arbitrage detection
+                                    </Badge>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* No Opportunities (with API key) */}
+                {!loading && opportunities.length === 0 && !error && apiStatus && apiStatus.hasLiveAccess && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -353,19 +384,13 @@ export function ArbitrageDashboard() {
                             <CardContent>
                                 <Target className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                                 <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                                    {isLiveMode ? 'No Live Arbitrage Opportunities' : 'No Demo Opportunities'}
+                                    No Live Arbitrage Opportunities
                                 </h3>
                                 <p className="text-gray-600 mb-4">
-                                    {isLiveMode
-                                        ? 'The market is efficient right now - check back soon as opportunities appear frequently'
-                                        : 'Switch to Live Mode to find real arbitrage opportunities'
-                                    }
+                                    The market is efficient right now - check back soon as opportunities appear frequently
                                 </p>
                                 <Badge variant="outline" className="text-xs">
-                                    {isLiveMode
-                                        ? `Next scan in ${autoRefresh ? nextUpdate || '60' : 'manual'} seconds`
-                                        : 'Practice mode'
-                                    }
+                                    Next scan in {autoRefresh ? nextUpdate || '60' : 'manual'} seconds
                                 </Badge>
                             </CardContent>
                         </Card>
@@ -380,16 +405,14 @@ export function ArbitrageDashboard() {
                                 <div className="flex items-center space-x-3">
                                     <TrendingUp className="w-5 h-5 text-green-600" />
                                     <h2 className="text-xl font-semibold">
-                                        {isLiveMode ? 'Live' : 'Practice'} Arbitrage Opportunities
+                                        Live Arbitrage Opportunities
                                     </h2>
-                                    <Badge variant="success">
+                                    <Badge variant="default">
                                         {opportunities.length} Found
                                     </Badge>
-                                    {isLiveMode && (
-                                        <Badge variant="outline" className="text-green-600 border-green-600">
-                                            REAL MONEY
-                                        </Badge>
-                                    )}
+                                    <Badge variant="outline" className="text-green-600 border-green-600">
+                                        REAL MONEY
+                                    </Badge>
                                 </div>
                                 <Button variant="outline" size="sm">
                                     <Settings className="w-4 h-4 mr-2" />
@@ -508,9 +531,6 @@ export function ArbitrageDashboard() {
                                     <div className="text-sm text-blue-800 space-y-2">
                                         <p>
                                             <strong>Live Mode</strong> connects to real bookmaker APIs to find actual arbitrage opportunities with guaranteed profits.
-                                        </p>
-                                        <p>
-                                            <strong>Practice Mode</strong> uses historical data patterns for learning how arbitrage works without using API calls.
                                         </p>
                                         <p>
                                             <strong>Kelly Criterion</strong> determines the optimal bet size to maximize long-term growth while minimizing risk.

@@ -1,5 +1,5 @@
 // ===========================================
-// ARBITRAGE DATA SERVICE - DATA PROVIDER
+// ARBITRAGE DATA SERVICE - LIVE DATA PROVIDER
 // ===========================================
 
 import axios from 'axios';
@@ -12,7 +12,7 @@ export class ArbitrageDataService {
     private static readonly BOOKMAKERS = [
         'bet365', 'pinnacle', 'betfair', 'williamhill',
         'ladbrokes', 'coral', 'betway', 'unibet',
-        'betvictor', 'paddypower'
+        'betvictor', 'paddypower', 'skybet', 'betfred'
     ];
 
     static async fetchAllOdds(sport: string = 'soccer_epl'): Promise<any[]> {
@@ -71,94 +71,5 @@ export class ArbitrageDataService {
         return matchOddsMap;
     }
 
-    static generateHistoricalData(): Map<string, BookmakerOdds[]> {
-        // Historical data patterns for practice mode
-        const historicalMatches = [
-            {
-                key: 'Manchester_City_vs_Arsenal',
-                home: 'Manchester City',
-                away: 'Arsenal',
-                competition: 'Premier League',
-                time: new Date(Date.now() + 2 * 60 * 60 * 1000) // 2 hours from now
-            },
-            {
-                key: 'Real_Madrid_vs_Barcelona',
-                home: 'Real Madrid',
-                away: 'Barcelona',
-                competition: 'La Liga',
-                time: new Date(Date.now() + 4 * 60 * 60 * 1000) // 4 hours from now
-            },
-            {
-                key: 'Bayern_Munich_vs_Borussia_Dortmund',
-                home: 'Bayern Munich',
-                away: 'Borussia Dortmund',
-                competition: 'Bundesliga',
-                time: new Date(Date.now() + 6 * 60 * 60 * 1000) // 6 hours from now
-            },
-            {
-                key: 'Liverpool_vs_Manchester_United',
-                home: 'Liverpool',
-                away: 'Manchester United',
-                competition: 'Premier League',
-                time: new Date(Date.now() + 3 * 60 * 60 * 1000)
-            },
-            {
-                key: 'Chelsea_vs_Tottenham',
-                home: 'Chelsea',
-                away: 'Tottenham',
-                competition: 'Premier League',
-                time: new Date(Date.now() + 5 * 60 * 60 * 1000)
-            }
-        ];
-
-        const bookmakerNames = ['Bet365', 'Pinnacle', 'Betfair', 'William Hill', 'Ladbrokes', 'Coral', 'Betway'];
-        const historicalOddsMap = new Map<string, BookmakerOdds[]>();
-
-        historicalMatches.forEach(match => {
-            const odds: BookmakerOdds[] = [];
-
-            bookmakerNames.forEach(bookmaker => {
-                // Generate realistic odds with slight variations to create arbitrage opportunities
-                const baseHomeOdds = 1.8 + (Math.random() * 2.4); // 1.8 - 4.2
-                const baseAwayOdds = 2.0 + (Math.random() * 2.8); // 2.0 - 4.8
-                const baseDrawOdds = 3.0 + (Math.random() * 1.5); // 3.0 - 4.5
-
-                // Introduce systematic arbitrage opportunities
-                let homeOdds = baseHomeOdds;
-                let awayOdds = baseAwayOdds;
-                let drawOdds = baseDrawOdds;
-
-                // Create arbitrage opportunities by having different bookmakers favor different outcomes
-                if (bookmaker === 'Pinnacle') {
-                    homeOdds += 0.15; // Pinnacle typically has better home odds
-                } else if (bookmaker === 'Betfair') {
-                    awayOdds += 0.2; // Betfair has better away odds
-                } else if (bookmaker === 'Bet365') {
-                    drawOdds += 0.25; // Bet365 has better draw odds
-                }
-
-                // Ensure we don't create impossible odds combinations
-                const totalImplied = (1/homeOdds) + (1/awayOdds) + (1/drawOdds);
-                if (totalImplied >= 0.99) { // Create arbitrage opportunity
-                    const adjustment = 0.98 / totalImplied;
-                    homeOdds /= adjustment;
-                    awayOdds /= adjustment;
-                    drawOdds /= adjustment;
-                }
-
-                odds.push({
-                    bookmaker,
-                    home: parseFloat(homeOdds.toFixed(2)),
-                    draw: parseFloat(drawOdds.toFixed(2)),
-                    away: parseFloat(awayOdds.toFixed(2)),
-                    lastUpdate: new Date(Date.now() - Math.random() * 300000), // Up to 5 minutes ago
-                    market: 'h2h'
-                });
-            });
-
-            historicalOddsMap.set(match.key, odds);
-        });
-
-        return historicalOddsMap;
-    }
+    // Removed simulation methods - only real API data supported
 }
